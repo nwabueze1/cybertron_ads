@@ -196,7 +196,7 @@ export default function Home() {
         <button
           onClick={handleOpenModal}
           type="button"
-          className="px-4 py-2 rounded-md bg-slate-100 text-grey-900 hover:bg-white duration-500"
+          className="px-4 py-2 rounded-md bg-slate-100 text-grey-900 hover:bg-white"
         >
           Click to spin
         </button>
@@ -208,7 +208,7 @@ export default function Home() {
       >
         <div className="w-[80%] md:w-[50%] xl:w-[40%] 2xl:w-[35%] bg-white rounded-sm cursor-auto">
           <header className="flex justify-between items-center p-5">
-            <h4 className="uppercase  text-xs md:text-sm ">
+            <h4 className="uppercase  text-xs md:text-sm text-black ">
               Enter your details to spin
             </h4>
             <button

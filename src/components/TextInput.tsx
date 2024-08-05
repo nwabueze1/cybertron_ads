@@ -46,7 +46,7 @@ export const TextInput: FC<TextInputProps> = ({
         <input
           type="text"
           placeholder={placeholder}
-          className="flex-1 outline-none text-sm"
+          className="flex-1 outline-none text-sm text-black"
           name={name}
           onChange={handleChange}
           onFocus={value ? handleFocus : undefined}
