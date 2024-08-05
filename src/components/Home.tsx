@@ -102,10 +102,10 @@ export default function Home() {
 
   const handleRegister = async () => {
     setLoading(true);
-    const { data, error } = await nhost.graphql.request(createRegistration, {
-      ...state.form,
-      offer_won: "me",
-    });
+    const { data, error } = await nhost.graphql.request(
+      createRegistration,
+      state.form
+    );
 
     if (error) {
       setState({ ...state, modal: null });
