@@ -1,113 +1,235 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { TextInput } from "@/components/TextInput";
+import { createRegistration } from "@/gql/create_registraton";
+import { nhost } from "@/lib.nhost";
+import { textFields } from "@/utils/fields";
+import { spinData } from "@/utils/spindata";
+import { NhostProvider } from "@nhost/nextjs";
+import { FormEventHandler, useState } from "react";
+import { Wheel } from "react-custom-roulette";
+
+type State = {
+  open: boolean;
+  form: Record<string, any>;
+  errors: Record<string, any>;
+  modal: "form" | "spinner" | null;
+};
+
+function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <NhostProvider nhost={nhost}>
+      <Home />
+    </NhostProvider>
+  );
+}
+function Home() {
+  const [state, setState] = useState<State>({
+    open: false,
+    form: { name: "", email: "", phone_number: "" },
+    errors: {},
+    modal: null,
+  });
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [newPrize, setNewPrize] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const handleChange = (e: { name: string; value: string }) => {
+    const errors = state.errors;
+
+    if (e.value) {
+      delete errors[e.name];
+    }
+    setState({
+      ...state,
+      form: {
+        ...state.form,
+        [e.name]: e.value,
+      },
+      errors,
+    });
+  };
+
+  const handleFocus = (e: { name: string; value: string }) => {
+    if (!e.value) {
+      return setState({
+        ...state,
+        errors: { ...state.errors, [e.name]: "This field is required" },
+      });
+    }
+  };
+
+  const handleValidateInputs = () => {
+    const errors = state.errors;
+    textFields.forEach(({ name }) => {
+      if (!state?.form?.[name]) {
+        errors[name] = "This field is required.";
+      } else {
+        delete errors[name];
+      }
+    });
+    //validate email
+    if (!errors["email"]) {
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state?.form?.["email"])
+        ? (errors["email"] = "Please enter a valid phone number")
+        : delete errors["email"];
+    }
+
+    //validate phone_number
+    if (!errors["phone_number"]) {
+      !/^\+?(\d[\d-. ]?){7,15}$/.test(state?.form?.["phone_number"])
+        ? (errors["phone_number"] = "Please enter a valid phone number")
+        : delete errors["phone_number"];
+    }
+
+    setState({ ...state, errors });
+
+    return Object.values(errors).length !== 0;
+  };
+
+  const handleSubmitInfo: FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+    const hasError = handleValidateInputs();
+    if (hasError) return;
+
+    setState({ ...state, modal: "spinner" });
+  };
+
+  const handleSpinClick = () => {
+    if (!isSpinning) {
+      const newPrize = Math.floor(Math.random() * spinData.length);
+      setNewPrize(newPrize);
+      setIsSpinning(true);
+    }
+  };
+
+  const handleSpinningStopped = () => {
+    setIsSpinning(false);
+    setState({ ...state, form: { ...state.form, offer_won: newPrize } });
+  };
+
+  const handleOpenModal = () => {
+    setState({ ...state, modal: "form" });
+  };
+
+  const handleRegister = async () => {
+    setLoading(true);
+    const { data, error } = await nhost.graphql.request(createRegistration, {
+      ...state.form,
+      offer_won: "me",
+    });
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setLoading(false);
+  };
+
+  const renderInputs = () =>
+    textFields.map((field, index) => (
+      <TextInput
+        {...field}
+        value={state?.form?.[field?.name ?? ""] as string}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        key={index}
+        errorMessage={state.errors?.[field?.name]}
+        isError={state?.errors?.[field?.name]}
+      />
+    ));
+
+  const renderForm = () => (
+    <form
+      className="grid grid-cols-1 gap-3 my-4 px-5"
+      onSubmit={handleSubmitInfo}
+    >
+      {renderInputs()}
+      <div className="flex gap-1 items-center">
+        <button
+          type="submit"
+          className="w-[max-content] uppercase text-xs px-5 py-2 rounded-md bg-slate-700 hover:bg-slate-900 text-white "
+        >
+          {" "}
+          Show spin
+        </button>
+      </div>
+    </form>
+  );
+
+  const renderWheel = () => (
+    <div className="flex flex-col mx-auto">
+      <Wheel
+        mustStartSpinning={isSpinning}
+        prizeNumber={newPrize}
+        data={spinData}
+        fontSize={10}
+        onStopSpinning={handleSpinningStopped}
+        outerBorderWidth={1}
+        outerBorderColor="white"
+        radiusLineWidth={0}
+      />
+      <div className="flex gap-5 px-5">
+        <button
+          disabled={isSpinning}
+          onClick={handleSpinClick}
+          className="px-10 py-2 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto my-5 text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
+        >
+          {!isSpinning ? "Spin" : "Spinning..."}
+        </button>
+        <button
+          disabled={
+            !state?.form?.offer_won ||
+            state?.form.offer_won === "Try again" ||
+            isSpinning
+          }
+          onClick={handleRegister}
+          className="px-10 py-2 flex-1 bg-blue-700 mx-auto my-5 text-white rounded-md disabled:cursor-auto disabled:bg-blue-300"
+        >
+          submit
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <main className="w-screen h-screen bg-gray-800 relative">
+      <div className="w-[85%] h-[100%] flex justify-center items-center mx-auto">
+        <button
+          onClick={handleOpenModal}
+          type="button"
+          className="px-4 py-2 rounded-md bg-slate-100 text-grey-900 hover:bg-white duration-500"
+        >
+          Click to spin
+        </button>
+      </div>
+      <div
+        className={`absolute top-0 left-0 flex justify-center items-center h-screen w-screen bg-[rgba(0,0,0,0.3)]  cursor-not-allowed ${
+          state.modal !== null ? "visible z-10" : "hidden z-0"
+        }`}
+      >
+        <div className="w-[80%] md:w-[50%] xl:w-[40%] 2xl:w-[35%] bg-white rounded-sm cursor-auto">
+          <header className="flex justify-between items-center p-5">
+            <h4 className="uppercase  text-xs md:text-sm ">
+              Enter your details to spin
+            </h4>
+            <button
+              onClick={() => setState({ ...state, modal: null })}
+              className="border-slate-400 border-[1px] border-solid outline-none bg-none h-[20px] w-[20px] flex items-center justify-center rounded-full"
+            >
+              <span className="text-xs">X</span>
+            </button>
+          </header>
+          <div className="w-full h-[1px] bg-slate-300" />
+          {state.modal === "form"
+            ? renderForm()
+            : state.modal === "spinner"
+            ? renderWheel()
+            : null}
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
       </div>
     </main>
   );
 }
+
+export default App;
