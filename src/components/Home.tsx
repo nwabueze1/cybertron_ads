@@ -184,7 +184,7 @@ export default function Home() {
           onClick={handleRegister}
           className="px-5 py-2 md:px-10 flex-1 bg-blue-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-blue-300"
         >
-          {loading ? "submitting" : "submit"}
+          {loading ? "submitting..." : "submit"}
         </button>
       </div>
     </div>
