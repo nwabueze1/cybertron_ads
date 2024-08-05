@@ -108,6 +108,7 @@ export default function Home() {
     });
 
     if (error) {
+      setState({ ...state, modal: null });
       alert("failed to submit registration");
       return;
     }
