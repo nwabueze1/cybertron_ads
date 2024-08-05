@@ -93,7 +93,10 @@ export default function Home() {
 
   const handleSpinningStopped = () => {
     setIsSpinning(false);
-    setState({ ...state, form: { ...state.form, offer_won: newPrize } });
+    setState({
+      ...state,
+      form: { ...state.form, offer_won: spinData[newPrize].option },
+    });
   };
 
   const handleOpenModal = () => {
