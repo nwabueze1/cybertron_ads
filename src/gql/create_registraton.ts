@@ -3,15 +3,8 @@ export const createRegistration = `
 {
   insert_registrations_one(object:{name:$name, email:$email, phone_number:$phone_number, offer_won:$offer_won})
   {
+    name
     id
   }
 }
 `;
-
-export const createUser = `
-    mutation($email: String!, $password: String!) {
-      insert_users_one(object: {email: $email, password: $password}) {
-        id
-      }
-    }
-  `;

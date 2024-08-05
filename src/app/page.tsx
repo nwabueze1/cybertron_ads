@@ -10,7 +10,6 @@ import { FormEventHandler, useState } from "react";
 import { Wheel } from "react-custom-roulette";
 
 type State = {
-  open: boolean;
   form: Record<string, any>;
   errors: Record<string, any>;
   modal: "form" | "spinner" | null;
@@ -23,13 +22,14 @@ function App() {
     </NhostProvider>
   );
 }
+
+const initialState = {
+  form: { name: "", email: "", phone_number: "" },
+  errors: {},
+  modal: null,
+};
 function Home() {
-  const [state, setState] = useState<State>({
-    open: false,
-    form: { name: "", email: "", phone_number: "" },
-    errors: {},
-    modal: null,
-  });
+  const [state, setState] = useState<State>(initialState);
   const [isSpinning, setIsSpinning] = useState(false);
   const [newPrize, setNewPrize] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -119,11 +119,19 @@ function Home() {
     });
 
     if (error) {
-      console.log(error);
+      alert("failed to submit registration");
       return;
     }
 
+    alert(
+      `Congratulations ${data?.insert_registrations_one?.name}!!. We wil get in touch soon.`
+    );
     setLoading(false);
+    resetStates();
+  };
+
+  const resetStates = () => {
+    setState(initialState);
   };
 
   const renderInputs = () =>
@@ -169,9 +177,9 @@ function Home() {
         outerBorderColor="white"
         radiusLineWidth={0}
       />
-      <div className="flex gap-5 px-5">
+      <div className="flex flex-col md:flex-row gap-5 px-5">
         <button
-          disabled={isSpinning}
+          disabled={isSpinning || loading}
           onClick={handleSpinClick}
           className="px-10 py-2 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto my-5 text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
         >
@@ -181,12 +189,13 @@ function Home() {
           disabled={
             !state?.form?.offer_won ||
             state?.form.offer_won === "Try again" ||
-            isSpinning
+            isSpinning ||
+            loading
           }
           onClick={handleRegister}
           className="px-10 py-2 flex-1 bg-blue-700 mx-auto my-5 text-white rounded-md disabled:cursor-auto disabled:bg-blue-300"
         >
-          submit
+          {loading ? "submitting" : "submit"}
         </button>
       </div>
     </div>
