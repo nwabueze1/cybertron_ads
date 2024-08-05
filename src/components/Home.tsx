@@ -166,11 +166,11 @@ export default function Home() {
         outerBorderColor="white"
         radiusLineWidth={0}
       />
-      <div className="flex flex-col md:flex-row gap-5 px-5">
+      <div className="flex  gap-5 px-5 my-5">
         <button
           disabled={isSpinning || loading}
           onClick={handleSpinClick}
-          className="px-10 py-2 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto my-5 text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
+          className="px-5 py-2 md:px-10 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
         >
           {!isSpinning ? "Spin" : "Spinning..."}
         </button>
@@ -182,7 +182,7 @@ export default function Home() {
             loading
           }
           onClick={handleRegister}
-          className="px-10 py-2 flex-1 bg-blue-700 mx-auto my-5 text-white rounded-md disabled:cursor-auto disabled:bg-blue-300"
+          className="px-5 py-2 md:px-10 flex-1 bg-blue-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-blue-300"
         >
           {loading ? "submitting" : "submit"}
         </button>
