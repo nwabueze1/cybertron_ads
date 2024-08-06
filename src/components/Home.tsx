@@ -105,6 +105,7 @@ export default function Home() {
 
   const handleRegister = async () => {
     setLoading(true);
+
     const { data, error } = await nhost.graphql.request(
       createRegistration,
       state.form
@@ -117,7 +118,7 @@ export default function Home() {
     }
 
     alert(
-      `Congratulations ${data?.insert_registrations_one?.name}!!. We wil get in touch soon.`
+      `Congratulations ${data?.insert_Spin_Registrations_one?.name}!!. We wil get in touch soon.`
     );
     setLoading(false);
     resetStates();
