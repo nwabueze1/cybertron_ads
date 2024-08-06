@@ -118,7 +118,7 @@ export default function Home() {
     }
 
     alert(
-      `Congratulations ${data?.insert_Spin_Registrations_one?.name}!!. We wil get in touch soon.`
+      `Congratulations ${data?.registrations?.name}!!. We wil get in touch soon.`
     );
     setLoading(false);
     resetStates();
