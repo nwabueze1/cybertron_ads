@@ -16,12 +16,17 @@ type State = {
   errors: Record<string, any>;
   modal: "form" | "spinner" | null;
 };
+const cache_key = "cached_registration";
 export default function Home() {
   const [state, setState] = useState<State>(initialState);
   const [isSpinning, setIsSpinning] = useState(false);
   const [newPrize, setNewPrize] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [registeredEmails, setRegisteredEmails] = useState<string[]>(() => {
+    return JSON.parse(localStorage.getItem(cache_key) || "[]") as string[];
+  });
   const nhost = useNhostClient();
+
   const handleChange = (e: { name: string; value: string }) => {
     const errors = state.errors;
 
@@ -97,18 +102,24 @@ export default function Home() {
       ...state,
       form: { ...state.form, offer_won: spinData[newPrize].option },
     });
+    const newRegistration = {
+      ...state.form,
+      offer_won: spinData[newPrize].option,
+    };
+
+    handleRegister(newRegistration);
   };
 
   const handleOpenModal = () => {
     setState({ ...state, modal: "form" });
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (args: any) => {
     setLoading(true);
 
     const { data, error } = await nhost.graphql.request(
       createRegistration,
-      state.form
+      args
     );
 
     if (error) {
@@ -117,9 +128,17 @@ export default function Home() {
       return;
     }
 
-    alert(
-      `Congratulations ${data?.insert_registrations_one?.name}!!. We wil get in touch soon.`
-    );
+    const alertMessage =
+      args?.offer_won === "Try again"
+        ? "Sorry you did not win any promo at this time"
+        : `Congratulations ${data?.insert_registrations_one?.name}!!. We wil get in touch soon.`;
+
+    alert(alertMessage);
+    const cached_registrations = localStorage.getItem(cache_key);
+    const parsed_cache = JSON.parse(cached_registrations || "[]") as string[];
+    parsed_cache.push(args?.email);
+    localStorage.setItem(cache_key, JSON.stringify(parsed_cache));
+    setRegisteredEmails(parsed_cache);
     setLoading(false);
     resetStates();
   };
@@ -171,15 +190,24 @@ export default function Home() {
         outerBorderColor="white"
         radiusLineWidth={0}
       />
-      <div className="flex  gap-5 px-5 my-5">
+      <div className="px-5 my-5">
         <button
-          disabled={isSpinning || loading}
+          disabled={
+            isSpinning ||
+            loading ||
+            registeredEmails.includes(state?.form?.email)
+          }
           onClick={handleSpinClick}
-          className="px-5 py-2 md:px-10 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
+          className="w-full px-5 py-2 md:px-10 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
         >
           {!isSpinning ? "Spin" : "Spinning..."}
         </button>
-        <button
+        {registeredEmails.includes(state?.form?.email) && (
+          <span className="block my-2 text-xs text-red-500">
+            You have spined with this email already.
+          </span>
+        )}
+        {/* <button
           disabled={
             !state?.form?.offer_won ||
             state?.form.offer_won === "Try again" ||
@@ -190,7 +218,7 @@ export default function Home() {
           className="px-5 py-2 md:px-10 flex-1 bg-blue-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-blue-300"
         >
           {loading ? "submitting..." : "submit"}
-        </button>
+        </button> */}
       </div>
     </div>
   );

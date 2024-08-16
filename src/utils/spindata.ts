@@ -15,9 +15,9 @@ const data = [
     question: "2x Out of Hme Voucher",
   }, //color
   {
-    label: "Free T-shirt",
+    label: "250K Bonus Voucher",
     value: 4,
-    question: "Free T-shirt",
+    question: "250K Bonus Voucher",
   }, //font-weight
   {
     label: "N50,000 Bonus Voucher",
