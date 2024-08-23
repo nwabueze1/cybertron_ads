@@ -15,21 +15,26 @@ const data = [
     question: "2x Out of Hme Voucher",
   }, //color
   {
-    label: "250K Bonus Voucher",
+    label: "Try again",
     value: 4,
-    question: "250K Bonus Voucher",
+    question: "Try again",
+  }, // padding
+  {
+    label: "3x Bonus Voucher",
+    value: 4,
+    question: "3x Bonus Voucher",
   }, //font-weight
   {
-    label: "N50,000 Bonus Voucher",
+    label: "2x OOH",
     value: 5,
-    question: "N50,000 Bonus Voucher",
+    question: "2x OOH",
   }, //font-size
   {
-    label: "200,000 Bonus Voucher",
+    label: "3x Digital Voucher",
     value: 5,
-    question: "N200,000 Bonus Voucher",
+    question: "3x Digital Voucher",
   }, //font-size
-];
+].map((c, index) => ({ ...c, value: index + 1 }));
 
 const backgrounds = [
   "rgb(255, 127, 14)",

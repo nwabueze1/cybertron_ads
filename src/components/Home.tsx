@@ -1,10 +1,12 @@
 import { createRegistration } from "@/gql/create_registraton";
 import { textFields } from "@/utils/fields";
 import { spinData } from "@/utils/spindata";
-import { useState, FormEventHandler } from "react";
+import { useState, FormEventHandler, useEffect } from "react";
 import { TextInput } from "./TextInput";
 import { useNhostClient } from "@nhost/nextjs";
 import { Wheel } from "react-custom-roulette";
+
+const lastSavedKey = "last_spin_timestamp";
 
 const initialState = {
   form: { name: "", email: "", phone_number: "" },
@@ -22,6 +24,7 @@ export default function Home() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [newPrize, setNewPrize] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [canSpin, setCanSpin] = useState(true);
   const [registeredEmails, setRegisteredEmails] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem(cache_key) || "[]") as string[];
   });
@@ -141,6 +144,8 @@ export default function Home() {
     setRegisteredEmails(parsed_cache);
     setLoading(false);
     resetStates();
+    setCanSpin(false);
+    localStorage.setItem(lastSavedKey, JSON.stringify(Date.now()));
   };
 
   const resetStates = () => {
@@ -195,7 +200,8 @@ export default function Home() {
           disabled={
             isSpinning ||
             loading ||
-            registeredEmails.includes(state?.form?.email)
+            registeredEmails.includes(state?.form?.email) ||
+            !canSpin
           }
           onClick={handleSpinClick}
           className="w-full px-5 py-2 md:px-10 flex-1 bg-slate-500 hover:bg-slate-700 mx-auto  text-white rounded-md disabled:cursor-auto disabled:bg-slate-400"
@@ -205,6 +211,11 @@ export default function Home() {
         {registeredEmails.includes(state?.form?.email) && (
           <span className="block my-2 text-xs text-red-500">
             You have spined with this email already.
+          </span>
+        )}
+        {!canSpin && (
+          <span className="block my-2 text-xs text-red-500">
+            You need to wait at least 5 mins and refresh the page to spin again.
           </span>
         )}
         {/* <button
@@ -222,6 +233,21 @@ export default function Home() {
       </div>
     </div>
   );
+
+  useEffect(() => {
+    const lastSpin = localStorage.getItem(lastSavedKey);
+    if (!lastSpin) return setCanSpin(true);
+
+    const isWithing5minsRange = isWithinFiveMinutes(
+      Number(JSON.parse(lastSpin))
+    );
+
+    if (isWithing5minsRange) {
+      setCanSpin(false);
+    } else {
+      setCanSpin(true);
+    }
+  }, []);
 
   return (
     <main className="w-screen h-screen bg-gray-800 relative">
@@ -261,4 +287,18 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+function isWithinFiveMinutes(timestamp: number) {
+  // Get the current time in milliseconds
+  const now = Date.now();
+
+  // Calculate the difference between now and the provided timestamp
+  const difference = now - timestamp;
+
+  // Define the threshold for 5 minutes in milliseconds
+  const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutes * 60 seconds/minute * 1000 milliseconds/second
+
+  // Check if the difference is less than 5 minutes
+  return difference < fiveMinutesInMs;
 }
